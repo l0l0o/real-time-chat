@@ -22,13 +22,14 @@ export class MessagesService {
     const message = this.messagesRepository.create({
       ...createMessageDto,
       user,
+      likes: [],
     });
     return this.messagesRepository.save(message);
   }
 
   findAll(): Promise<Message[]> {
     return this.messagesRepository.find({
-      relations: ['user'],
+      relations: ['user', 'likes'],
       order: {
         createdAt: 'ASC',
       },
@@ -38,7 +39,7 @@ export class MessagesService {
   async findOne(id: string): Promise<Message> {
     const message = await this.messagesRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'likes'],
     });
     if (!message) {
       throw new NotFoundException(`Message with ID ${id} not found`);
@@ -56,5 +57,25 @@ export class MessagesService {
 
   async remove(id: string): Promise<void> {
     await this.messagesRepository.softDelete(id);
+  }
+
+  async toggleLike(messageId: string, userId: string): Promise<Message> {
+    const message = await this.findOne(messageId);
+    const user = await this.usersService.findOne(userId);
+
+    // Vérifie si l'utilisateur a déjà liké le message
+    const userHasLikedIndex = message.likes.findIndex(
+      (likeUser) => likeUser.id === user.id,
+    );
+
+    if (userHasLikedIndex === -1) {
+      // Ajoute le like
+      message.likes.push(user);
+    } else {
+      // Retire le like
+      message.likes.splice(userHasLikedIndex, 1);
+    }
+
+    return this.messagesRepository.save(message);
   }
 }

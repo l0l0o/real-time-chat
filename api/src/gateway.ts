@@ -25,6 +25,12 @@ interface Message {
   email?: string;
 }
 
+interface LikeMessage {
+  messageId: string;
+  userId: string;
+  email: string;
+}
+
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -165,6 +171,26 @@ export class Gateway
 
     // Diffuser le message à tous les clients connectés
     this.server.emit('messageFromBack', payload);
+  }
+
+  @SubscribeMessage('likeFromFront')
+  handleLike(client: Socket, payload: LikeMessage): void {
+    console.log(`Gateway: Received like from client ${client.id}:`, payload);
+
+    if (payload.userId) {
+      // Marquer l'utilisateur comme participant
+      this.participantUsers.add(payload.userId);
+
+      // Mettre à jour le statut d'utilisateur s'il est en ligne
+      const user = this.onlineUsers.get(payload.userId);
+      if (user) {
+        user.hasParticipated = true;
+        this.onlineUsers.set(payload.userId, user);
+      }
+    }
+
+    // Diffuser le like à tous les clients connectés
+    this.server.emit('likeFromBack', payload);
   }
 
   @SubscribeMessage('messageFromBack')

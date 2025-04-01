@@ -10,7 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
-import { CreateMessageDto } from './dto/create-message.dto';
+import { CreateMessageDto, LikeMessageDto } from './dto/create-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
@@ -21,6 +21,18 @@ interface RequestWithUser extends Request {
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
+
+  @Post('like')
+  @UseGuards(JwtAuthGuard)
+  toggleLike(
+    @Request() req: RequestWithUser,
+    @Body() likeMessageDto: LikeMessageDto,
+  ) {
+    return this.messagesService.toggleLike(
+      likeMessageDto.messageId,
+      req.user.id,
+    );
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)

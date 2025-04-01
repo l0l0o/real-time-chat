@@ -36,11 +36,16 @@ const MessageForm: React.FC = () => {
   });
 
   const onSubmit = (data: CreateMessageDto) => {
+    // Créer la date au format ISO et s'assurer qu'elle utilise le fuseau horaire correct
+    const now = new Date();
+    const timestamp = now.toISOString();
+
     // Créer un objet message complet
     const messageData = {
       text: data.text,
       user: user ? { email: user.email } : { email: "" },
-      createdAt: new Date().toISOString(),
+      userId: user?.id,
+      createdAt: timestamp,
     };
 
     // Envoyer le message via Socket.IO
