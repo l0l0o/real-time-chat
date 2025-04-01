@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { MessagesModule } from './messages/messages.module';
+import { Gateway } from './gateway';
 
 @Module({
   imports: [
@@ -22,5 +23,6 @@ import { MessagesModule } from './messages/messages.module';
     AuthModule,
     MessagesModule,
   ],
+  providers: [Gateway],
 })
 export class AppModule {}

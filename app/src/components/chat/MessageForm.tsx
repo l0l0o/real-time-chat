@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -6,11 +6,24 @@ import {
   CreateMessageDto,
 } from "../../services/messageService";
 import { SendHorizontal } from "lucide-react";
+import { io, Socket } from "socket.io-client";
+import { useAuth } from "../../contexts/AuthContext";
 
 const MessageForm: React.FC = () => {
   const { register, handleSubmit, reset, watch } = useForm<CreateMessageDto>();
   const queryClient = useQueryClient();
+  const [socket, setSocket] = useState<Socket | null>(null);
   const messageText = watch("text", "");
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const newSocket = io("http://localhost:8000");
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
 
   const allowToSend = messageText.trim() !== "";
 
@@ -23,6 +36,19 @@ const MessageForm: React.FC = () => {
   });
 
   const onSubmit = (data: CreateMessageDto) => {
+    // Créer un objet message complet
+    const messageData = {
+      text: data.text,
+      user: user ? { email: user.email } : { email: "" },
+      createdAt: new Date().toISOString(),
+    };
+
+    // Envoyer le message via Socket.IO
+    if (socket) {
+      socket.emit("messageFromFront", messageData);
+    }
+
+    // Envoyer le message via l'API REST
     mutation.mutate(data);
   };
 
@@ -32,7 +58,7 @@ const MessageForm: React.FC = () => {
         <input
           {...register("text", { required: true })}
           type="text"
-          placeholder="Type your message..."
+          placeholder="Tapez votre message..."
           className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
 
@@ -43,12 +69,12 @@ const MessageForm: React.FC = () => {
             allowToSend ? "opacity-100" : "opacity-0"
           }`}
         >
-          {mutation.isPending ? "Sending..." : <SendHorizontal />}
+          {mutation.isPending ? "Envoi..." : <SendHorizontal />}
         </button>
       </div>
       {mutation.isError && (
         <p className="mt-2 text-sm text-red-600">
-          Error sending message. Please try again.
+          Erreur lors de l'envoi du message. Veuillez réessayer.
         </p>
       )}
     </form>

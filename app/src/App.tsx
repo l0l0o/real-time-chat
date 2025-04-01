@@ -10,10 +10,27 @@ import Chat from "./pages/Chat";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import "./App.css";
+import { useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
 
 const queryClient = new QueryClient();
 
 function App() {
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  useEffect(() => {
+    const socket = io("http://localhost:8000");
+
+    socket.on("connect", () => {
+      console.log("Connected to server");
+      setSocket(socket);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
